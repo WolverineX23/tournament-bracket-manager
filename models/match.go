@@ -71,12 +71,16 @@ func (db DB) UpdateReadyMatch(tournamentId string, round, table, result int) (Ma
 	pendingMatch := Match{}
 	zeroMatch := Match{}
 
-	if err := db.DB.Where(`"tournament_id" = ? AND "round" AND "table" = ?`, tournamentId, round, table).First(&match).Error; err != nil {
+	if err := db.DB.Where(`"tournament_id" = ? AND "round" = ? AND "table" = ?`, tournamentId, round, table).First(&match).Error; err != nil {
 		return zeroMatch, err
 	}
 
 	if match.Result != 0 {
 		return zeroMatch, errors.New("This tournament has finished")
+	}
+	
+	if match.Status == "Pending" {
+		return zeroMatch, errors.New("This tournament is Pending")
 	}
 
 	updateMatch.Result = result

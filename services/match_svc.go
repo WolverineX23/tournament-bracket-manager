@@ -90,25 +90,30 @@ func GetMatchSchedule(teams []string, format string) ([]models.Match, string, er
 	return matches, uuid4, nil
 }
 
-func SetMatchResult(tournamentId string, round, table, result int) error{
-	if result != 1 || result != 2{
+func SetMatchResult(tournamentId string, round, table, result int) error {
+	if result != 1 && result != 2 {
 		return errors.New("invalid result")
 	}
 
-	db,err := getDB()
-	if err != nil{
+	db, err := getDB()
+	if err != nil {
 		return err
 	}
 
-	pendingMatch,err := db.UpdateReadyMatch(tournamentId, round, table, result)
+	pendingMatch, err := db.UpdateReadyMatch(tournamentId, round, table, result)
 
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
-	if err := db.UpdatePendingMatch(pendingMatch); err != nil{
-		return err
-	}
+	match := models.Match{}
 
-	return nil
+	if err := db.DB.Where(`"tournament_id" = ? AND "round" = ? AND "table" = ?`, pendingMatch.TournamentID, pendingMatch.Round, pendingMatch.Table).First(&match).Error; err != nil {
+		return nil //决赛后无比赛
+	} else { //若当前比赛非决赛，则更新后续比赛数据
+		if err := db.UpdatePendingMatch(pendingMatch); err != nil {
+			return err
+		}
+		return nil
+	}
 }
