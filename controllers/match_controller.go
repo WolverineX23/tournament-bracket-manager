@@ -43,8 +43,10 @@ type FormSetMatchResult struct {
 }
 
 func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
+	mc.log.Info("handling match schedule")
 	form := FormGetMatchSchedule{}
 	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed to bind JSON in handle get match schedule")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -56,6 +58,7 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 	}
 
 	if form.Teams == nil {
+		mc.log.Error("missing mandatory input parameter")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -66,8 +69,9 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 		return
 	}
 
-	brackets, tid, err := services.GetMatchSchedule(form.Teams, form.Format)
+	brackets, tid, err := mc.ms.GetMatchSchedule(form.Teams, form.Format)
 	if err != nil {
+		mc.log.Error("failed to get match schedule")
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{
@@ -89,8 +93,10 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 }
 
 func (mc *MatchController) HandleSetMatchResult(c *gin.Context) {
+	mc.log.Info("handing set match result")
 	form := FormSetMatchResult{}
 	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed to bind JSON in handle set match result")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -102,6 +108,7 @@ func (mc *MatchController) HandleSetMatchResult(c *gin.Context) {
 	}
 
 	if form.TournamentId == "" || form.Round == 0 || form.Table == 0 {
+		mc.log.Error("missing param")
 		c.JSON(http.StatusBadRequest,
 			gin.H{
 				"msg":   "failure",
@@ -111,8 +118,9 @@ func (mc *MatchController) HandleSetMatchResult(c *gin.Context) {
 		return
 	}
 	
-	err := services.SetMatchResult(form.TournamentId, form.Round, form.Table, form.Result)
+	err := mc.ms.SetMatchResult(form.TournamentId, form.Round, form.Table, form.Result)
 	if err != nil {
+		mc.log.Error("failed to set match result")
 		c.JSON(http.StatusInternalServerError,
 			gin.H{
 				"msg":   "failure",

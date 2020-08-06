@@ -7,7 +7,6 @@ package services
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/bitspawngg/tournament-bracket-manager/models"
 	uuid "github.com/satori/go.uuid"
@@ -17,22 +16,6 @@ import (
 type MatchService struct {
 	log *logrus.Entry
 	db  *models.DB
-}
-
-func getDB() (*models.DB, error) {
-	db_type, exists := os.LookupEnv("DB_TYPE")
-	if !exists {
-		return nil, errors.New("missing DB_TYPE environment variable")
-	}
-	db_path, exists := os.LookupEnv("DB_PATH")
-	if !exists {
-		return nil, errors.New("missing DB_PATH environment variable")
-	}
-	db := models.NewDB(db_type, db_path)
-	if err := db.Connect(); err != nil {
-		return nil, err
-	}
-	return db, nil
 }
 
 func NewMatchService(log *logrus.Logger, db *models.DB) *MatchService {
@@ -49,10 +32,11 @@ func JudgeTeamNumber(n int) bool {
 	return n&(n-1) == 0
 }
 
-func GetMatchSchedule(teams []string, format string) ([]models.Match, string, error) {
+func (ms *MatchService) GetMatchSchedule(teams []string, format string) ([]models.Match, string, error) {
 	//根据传入队伍，初始化每场对战数据
 	// implement proper check for number of teams in the next line
 	if !JudgeTeamNumber(len(teams)) {
+		ms.log.Error("number og teams not a power of 2")
 		return nil, "", errors.New("number of teams not a power of 2")
 	}
 	var matches []models.Match
@@ -75,43 +59,39 @@ func GetMatchSchedule(teams []string, format string) ([]models.Match, string, er
 			}
 		}
 
-		db, err := getDB()
-		if err != nil {
-			return nil, "", err
-		}
-		if err := db.CreateMatches(matches); err != nil {
+		if err := ms.db.CreateMatches(matches); err != nil {
+			ms.log.Error("failed to create matches")
 			return nil, "", err
 		}
 	} else if format == "CONSOLATION" {
 		return nil, "", fmt.Errorf("Unsupported tournament format [%s]", format)
 	} else {
+		ms.log.Error("Unsupported tournament format")
 		return nil, "", fmt.Errorf("Unsupported tournament format [%s]", format)
 	}
 	return matches, uuid4, nil
 }
 
-func SetMatchResult(tournamentId string, round, table, result int) error {
+func (ms *MatchService) SetMatchResult(tournamentId string, round, table, result int) error {
 	if result != 1 && result != 2 {
+		ms.log.Error("input an invalid result")
 		return errors.New("invalid result")
 	}
 
-	db, err := getDB()
-	if err != nil {
-		return err
-	}
-
-	pendingMatch, err := db.UpdateReadyMatch(tournamentId, round, table, result)
+	pendingMatch, err := ms.db.UpdateReadyMatch(tournamentId, round, table, result)
 
 	if err != nil {
+		ms.log.Error("failed to update ready match")
 		return err
 	}
 
 	match := models.Match{}
 
-	if err := db.DB.Where(`"tournament_id" = ? AND "round" = ? AND "table" = ?`, pendingMatch.TournamentID, pendingMatch.Round, pendingMatch.Table).First(&match).Error; err != nil {
+	if err := ms.db.DB.Where(`"tournament_id" = ? AND "round" = ? AND "table" = ?`, pendingMatch.TournamentID, pendingMatch.Round, pendingMatch.Table).First(&match).Error; err != nil {
 		return nil //决赛后无比赛
 	} else { //若当前比赛非决赛，则更新后续比赛数据
-		if err := db.UpdatePendingMatch(pendingMatch); err != nil {
+		if err := ms.db.UpdatePendingMatch(pendingMatch); err != nil {
+			ms.log.Error("failed to update penging match")
 			return err
 		}
 		return nil
