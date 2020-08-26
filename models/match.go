@@ -11,9 +11,10 @@ import (
 )
 
 type Match struct {
-	TournamentID string `json:"tournamentId" gorm:"primarykey"`
-	Round        int    `json:"round" gorm:"primarykey"`
-	Table        int    `json:"table" gorm:"primarykey"`
+	ID 			 uint   `json:"id" gorm:"primary_key"`
+	TournamentID string `json:"tournamentId"`
+	Round        int    `json:"round"`
+	Table        int    `json:"table"`
 	TeamOne      string `json:"teamOne"`
 	TeamTwo      string `json:"teamTwo"`
 	Status       string `json:"status"`

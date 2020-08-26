@@ -14,6 +14,7 @@ import (
 	"github.com/bitspawngg/tournament-bracket-manager/services"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"github.com/joho/godotenv"
 )
 
 func CreateServer() *http.Server {
@@ -25,6 +26,10 @@ func CreateServer() *http.Server {
 	log.Out = os.Stdout
 	log.Level = 4 // Info
 
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err.Error())
+	}
+	
 	LOG_FILE_LOCATION, exists := os.LookupEnv("LOG_FILE_LOCATION")
 	if !exists {
 		log.Fatal("missing LOG_FILE_LOCATION environment variable")
