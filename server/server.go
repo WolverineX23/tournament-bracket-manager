@@ -13,8 +13,8 @@ import (
 	"github.com/bitspawngg/tournament-bracket-manager/models"
 	"github.com/bitspawngg/tournament-bracket-manager/services"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 )
 
 func CreateServer() *http.Server {
@@ -29,7 +29,7 @@ func CreateServer() *http.Server {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err.Error())
 	}
-	
+
 	LOG_FILE_LOCATION, exists := os.LookupEnv("LOG_FILE_LOCATION")
 	if !exists {
 		log.Fatal("missing LOG_FILE_LOCATION environment variable")
@@ -80,6 +80,9 @@ func CreateServer() *http.Server {
 
 	// health check
 	r.GET("/ping", matchController.HandlePing)
+	r.GET("/login", matchController.HandleLogin)
+	r.GET("/verifytoken", matchController.HandleVerify)
+	r.GET("/refreshtoken", matchController.HandleRefreshToken)
 	r.POST("/matchschedule", matchController.HandleGetMatchSchedule)
 	r.POST("/setresults", matchController.HandleSetMatchResultS)
 	r.POST("/setresultc", matchController.HandleSetMatchResultC)

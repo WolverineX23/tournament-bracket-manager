@@ -7,8 +7,10 @@ package services
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/bitspawngg/tournament-bracket-manager/models"
+	"github.com/dgrijalva/jwt-go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -17,6 +19,11 @@ type MatchService struct {
 	log *logrus.Entry
 	db  *models.DB
 }
+
+var (
+	secret     = []byte("16849841325189456f487")
+	effectTime = 1 * time.Minute
+)
 
 func NewMatchService(log *logrus.Logger, db *models.DB) *MatchService {
 	return &MatchService{
@@ -159,4 +166,38 @@ func (ms *MatchService) SetMatchResultC(tournamentId string, round, table, resul
 		}
 		return nil
 	}
+}
+
+func (ms *MatchService) GenerateToken(claims models.UserClaims) (string, error) {
+	//设置token有效期，也可不设置有效期，采用redis的方式
+	claims.IssuedAt = time.Now().Unix()
+	claims.ExpiresAt = time.Now().Add(effectTime).Unix()
+	//生成token
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secret)
+	if err != nil {
+		ms.log.Error("failed to generate token.")
+		return "", err
+	}
+	return token, nil
+}
+
+func (ms *MatchService) VerifyToken(strToken string) (*models.UserClaims, error) {
+	token, err := jwt.ParseWithClaims(strToken, &models.UserClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return secret, nil
+	})
+	if err != nil {
+		ms.log.Error("failed to parse with claims")
+		return nil, err
+	}
+	claims, ok := token.Claims.(*models.UserClaims)
+	if !ok {
+		ms.log.Error("error in line 193: token.Claims.(*models.UserClaims)")
+		return nil, errors.New("error: verify token")
+	}
+	if err := token.Claims.Valid(); err != nil {
+		ms.log.Error("error in line 198: token.Claims.Valid()")
+		return nil, errors.New("the claim is invalid in verify operation")
+	}
+	fmt.Println("verify")
+	return claims, nil
 }

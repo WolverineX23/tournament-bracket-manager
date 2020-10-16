@@ -3,6 +3,8 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/bitspawngg/tournament-bracket-manager/models"
+
 	"github.com/bitspawngg/tournament-bracket-manager/services"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -20,31 +22,214 @@ func NewMatchController(log *logrus.Logger, ms *services.MatchService) *MatchCon
 	}
 }
 
+func (mc *MatchController) Authenticate(c *gin.Context, token string) *models.UserClaims {
+
+	claim, err := mc.ms.VerifyToken(token)
+	if err != nil {
+		mc.log.Error("failed to verify token")
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"msg":   "failure",
+				"error": err.Error(),
+			},
+		)
+		return nil
+	}
+
+	return claim
+}
+
 func (mc *MatchController) HandlePing(c *gin.Context) {
 	mc.log.Info("handling ping")
+
+	form := models.Token{}
+
+	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed to bind JSON in handle verify")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": err.Error(),
+			},
+		)
+		return
+	}
+
+	if form.Token == "" {
+		mc.log.Error("missing mandatory input parameter in function HandleVerify")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": "missing mandatory input parameter in function HandleVerify",
+			},
+		)
+		return
+	}
+
+	claim := mc.Authenticate(c, form.Token)
+
+	if claim == nil {
+		return
+	}
+
 	c.JSON(
 		http.StatusOK,
 		gin.H{
-			"msg": "pong",
+			"msg":   "pong",
+			"claim": claim.Username,
 		},
 	)
 }
 
-type FormGetMatchSchedule struct {
-	Teams  []string `json:"teams"`
-	Format string   `json:"format"`
+func (mc *MatchController) HandleLogin(c *gin.Context) {
+	mc.log.Info("handle login and generate token")
+	form := models.UserClaims{}
+	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed ot bind JSON in handle login")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": err.Error(),
+			},
+		)
+		return
+	}
+
+	if form.ID == "" || form.Name == "" || form.Username == "" || form.Password == "" {
+		mc.log.Error("missing param of user claim")
+		c.JSON(http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": "missing param",
+			},
+		)
+		return
+	}
+
+	token, err := mc.ms.GenerateToken(form)
+	if err != nil {
+		mc.log.Error("failed to generate token")
+		c.JSON(http.StatusInternalServerError,
+			gin.H{
+				"msg":   "failure",
+				"error": err.Error(),
+			},
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK,
+		gin.H{
+			"msg":   "success",
+			"token": token,
+		},
+	)
 }
 
-type FormSetMatchResult struct {
-	TournamentId string `json:"tournament_id"`
-	Round        int    `json:"round"`
-	Table        int    `json:"table"`
-	Result       int    `json:"result"`
+func (mc *MatchController) HandleVerify(c *gin.Context) {
+	mc.log.Info("handling verify token")
+	form := models.Token{}
+
+	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed to bind JSON in hadnle verify")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": err.Error(),
+			},
+		)
+		return
+	}
+
+	if form.Token == "" {
+		mc.log.Error("missing mandatory input parameter in function HandleVerify")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": "missing mandatory input parameter in function HandleVerify",
+			},
+		)
+		return
+	}
+
+	claim := mc.Authenticate(c, form.Token)
+
+	if claim == nil {
+		return
+	}
+
+	c.JSON(http.StatusOK,
+		gin.H{
+			"msg":   "success",
+			"claim": claim.Username,
+		},
+	)
+}
+
+func (mc *MatchController) HandleRefreshToken(c *gin.Context) {
+	mc.log.Info("handle refresh token")
+	form := models.Token{}
+
+	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed to bind JSON in hadnle verify")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": err.Error(),
+			},
+		)
+		return
+	}
+
+	if form.Token == "" {
+		mc.log.Error("missing mandatory input parameter in function HandleVerify")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": "missing mandatory input parameter in function HandleVerify",
+			},
+		)
+		return
+	}
+
+	claim := mc.Authenticate(c, form.Token)
+
+	if claim == nil {
+		return
+	}
+
+	newToken, err := mc.ms.GenerateToken(*claim)
+
+	if err != nil {
+		mc.log.Error("failed to generate token")
+		c.JSON(http.StatusInternalServerError,
+			gin.H{
+				"msg":   "failure",
+				"error": err.Error(),
+			},
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK,
+		gin.H{
+			"msg":   "success",
+			"token": newToken,
+		},
+	)
 }
 
 func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 	mc.log.Info("handling match schedule")
-	form := FormGetMatchSchedule{}
+	form := models.FormGetMatchSchedule{}
 	if err := c.ShouldBindJSON(&form); err != nil {
 		mc.log.Error("failed to bind JSON in handle get match schedule")
 		c.JSON(
@@ -54,6 +239,12 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 				"error": err.Error(),
 			},
 		)
+		return
+	}
+
+	claim := mc.Authenticate(c, form.Token)
+
+	if claim == nil {
 		return
 	}
 
@@ -94,7 +285,7 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 
 func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 	mc.log.Info("handing set match result of single")
-	form := FormSetMatchResult{}
+	form := models.FormSetMatchResult{}
 	if err := c.ShouldBindJSON(&form); err != nil {
 		mc.log.Error("failed to bind JSON")
 		c.JSON(
@@ -104,6 +295,12 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 				"error": err.Error(),
 			},
 		)
+		return
+	}
+
+	claim := mc.Authenticate(c, form.Token)
+
+	if claim == nil {
 		return
 	}
 
@@ -139,7 +336,7 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 
 func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
 	mc.log.Info("handing set match result of consolation")
-	form := FormSetMatchResult{}
+	form := models.FormSetMatchResult{}
 	if err := c.ShouldBindJSON(&form); err != nil {
 		mc.log.Error("failed to bind JSON")
 		c.JSON(
@@ -149,6 +346,12 @@ func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
 				"error": err.Error(),
 			},
 		)
+		return
+	}
+
+	claim := mc.Authenticate(c, form.Token)
+
+	if claim == nil {
 		return
 	}
 

@@ -12,7 +12,7 @@
             "remotePath": "",
             "port": 5546,
             "host": "127.0.0.1",
-            "program": "${fileDirname}",
+            "program": "${workspaceRoot}\\main.go",
             "env": {
                 "GOPATH": "D:/MyData/codes/GoPath",
                 "GOROOT": "C:/Go"
