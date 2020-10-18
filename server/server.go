@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/bitspawngg/tournament-bracket-manager/authentication"
+
 	"github.com/bitspawngg/tournament-bracket-manager/controllers"
 	"github.com/bitspawngg/tournament-bracket-manager/models"
 	"github.com/bitspawngg/tournament-bracket-manager/services"
@@ -72,6 +74,16 @@ func CreateServer() *http.Server {
 	matchController := controllers.NewMatchController(log, ms)
 
 	/*
+		Initialize TokenService
+	*/
+	ts := authentication.NewTokenService(log)
+
+	/*
+		Initialize TokenController
+	*/
+	tokenController := authentication.NewTokenController(log, ts)
+
+	/*
 		Initialize gin
 	*/
 	gin.SetMode(gin.ReleaseMode)
@@ -79,10 +91,10 @@ func CreateServer() *http.Server {
 	r.Use(CORSMiddleware())
 
 	// health check
+	r.GET("/login", tokenController.HandleLogin)
+	r.GET("/verifytoken", tokenController.HandleVerify)
+	r.GET("/refreshtoken", tokenController.HandleRefreshToken)
 	r.GET("/ping", matchController.HandlePing)
-	r.GET("/login", matchController.HandleLogin)
-	r.GET("/verifytoken", matchController.HandleVerify)
-	r.GET("/refreshtoken", matchController.HandleRefreshToken)
 	r.POST("/matchschedule", matchController.HandleGetMatchSchedule)
 	r.POST("/setresults", matchController.HandleSetMatchResultS)
 	r.POST("/setresultc", matchController.HandleSetMatchResultC)

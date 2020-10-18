@@ -3,8 +3,9 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/bitspawngg/tournament-bracket-manager/models"
+	"github.com/bitspawngg/tournament-bracket-manager/authentication"
 
+	"github.com/bitspawngg/tournament-bracket-manager/models"
 	"github.com/bitspawngg/tournament-bracket-manager/services"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -22,28 +23,10 @@ func NewMatchController(log *logrus.Logger, ms *services.MatchService) *MatchCon
 	}
 }
 
-func (mc *MatchController) Authenticate(c *gin.Context, token string) *models.UserClaims {
-
-	claim, err := mc.ms.VerifyToken(token)
-	if err != nil {
-		mc.log.Error("failed to verify token")
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{
-				"msg":   "failure",
-				"error": err.Error(),
-			},
-		)
-		return nil
-	}
-
-	return claim
-}
-
 func (mc *MatchController) HandlePing(c *gin.Context) {
 	mc.log.Info("handling ping")
 
-	form := models.Token{}
+	form := authentication.Token{}
 
 	if err := c.ShouldBindJSON(&form); err != nil {
 		mc.log.Error("failed to bind JSON in handle verify")
@@ -69,9 +52,18 @@ func (mc *MatchController) HandlePing(c *gin.Context) {
 		return
 	}
 
-	claim := mc.Authenticate(c, form.Token)
+	var ts *authentication.TokenService
+	claim, tErr := ts.VerifyToken(form.Token)
 
-	if claim == nil {
+	if tErr != nil {
+		mc.log.Error("Authentication error in handle ping")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": tErr.Error(),
+			},
+		)
 		return
 	}
 
@@ -80,149 +72,6 @@ func (mc *MatchController) HandlePing(c *gin.Context) {
 		gin.H{
 			"msg":   "pong",
 			"claim": claim.Username,
-		},
-	)
-}
-
-func (mc *MatchController) HandleLogin(c *gin.Context) {
-	mc.log.Info("handle login and generate token")
-	form := models.UserClaims{}
-	if err := c.ShouldBindJSON(&form); err != nil {
-		mc.log.Error("failed ot bind JSON in handle login")
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"msg":   "failure",
-				"error": err.Error(),
-			},
-		)
-		return
-	}
-
-	if form.ID == "" || form.Name == "" || form.Username == "" || form.Password == "" {
-		mc.log.Error("missing param of user claim")
-		c.JSON(http.StatusBadRequest,
-			gin.H{
-				"msg":   "failure",
-				"error": "missing param",
-			},
-		)
-		return
-	}
-
-	token, err := mc.ms.GenerateToken(form)
-	if err != nil {
-		mc.log.Error("failed to generate token")
-		c.JSON(http.StatusInternalServerError,
-			gin.H{
-				"msg":   "failure",
-				"error": err.Error(),
-			},
-		)
-		return
-	}
-
-	c.JSON(http.StatusOK,
-		gin.H{
-			"msg":   "success",
-			"token": token,
-		},
-	)
-}
-
-func (mc *MatchController) HandleVerify(c *gin.Context) {
-	mc.log.Info("handling verify token")
-	form := models.Token{}
-
-	if err := c.ShouldBindJSON(&form); err != nil {
-		mc.log.Error("failed to bind JSON in hadnle verify")
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"msg":   "failure",
-				"error": err.Error(),
-			},
-		)
-		return
-	}
-
-	if form.Token == "" {
-		mc.log.Error("missing mandatory input parameter in function HandleVerify")
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"msg":   "failure",
-				"error": "missing mandatory input parameter in function HandleVerify",
-			},
-		)
-		return
-	}
-
-	claim := mc.Authenticate(c, form.Token)
-
-	if claim == nil {
-		return
-	}
-
-	c.JSON(http.StatusOK,
-		gin.H{
-			"msg":   "success",
-			"claim": claim.Username,
-		},
-	)
-}
-
-func (mc *MatchController) HandleRefreshToken(c *gin.Context) {
-	mc.log.Info("handle refresh token")
-	form := models.Token{}
-
-	if err := c.ShouldBindJSON(&form); err != nil {
-		mc.log.Error("failed to bind JSON in hadnle verify")
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"msg":   "failure",
-				"error": err.Error(),
-			},
-		)
-		return
-	}
-
-	if form.Token == "" {
-		mc.log.Error("missing mandatory input parameter in function HandleVerify")
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"msg":   "failure",
-				"error": "missing mandatory input parameter in function HandleVerify",
-			},
-		)
-		return
-	}
-
-	claim := mc.Authenticate(c, form.Token)
-
-	if claim == nil {
-		return
-	}
-
-	newToken, err := mc.ms.GenerateToken(*claim)
-
-	if err != nil {
-		mc.log.Error("failed to generate token")
-		c.JSON(http.StatusInternalServerError,
-			gin.H{
-				"msg":   "failure",
-				"error": err.Error(),
-			},
-		)
-		return
-	}
-
-	c.JSON(http.StatusOK,
-		gin.H{
-			"msg":   "success",
-			"token": newToken,
 		},
 	)
 }
@@ -242,9 +91,18 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 		return
 	}
 
-	claim := mc.Authenticate(c, form.Token)
+	var ts *authentication.TokenService
+	claim, tErr := ts.VerifyToken(form.Token)
 
-	if claim == nil {
+	if tErr != nil {
+		mc.log.Error("Authentication error in handle get match schedule")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": tErr.Error(),
+			},
+		)
 		return
 	}
 
@@ -253,8 +111,9 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
-				"msg":   "failure",
-				"error": "missing mandatory input parameter",
+				"msg":      "failure",
+				"error":    "missing mandatory input parameter",
+				"username": claim.Username,
 			},
 		)
 		return
@@ -266,8 +125,9 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{
-				"msg":   "failure",
-				"error": err.Error(),
+				"msg":      "failure",
+				"error":    err.Error(),
+				"username": claim.Username,
 			},
 		)
 		return
@@ -279,6 +139,7 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 			"msg":           "success",
 			"data":          brackets,
 			"tournament_id": tid,
+			"username":      claim.Username,
 		},
 	)
 }
@@ -298,9 +159,18 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 		return
 	}
 
-	claim := mc.Authenticate(c, form.Token)
+	var ts *authentication.TokenService
+	claim, tErr := ts.VerifyToken(form.Token)
 
-	if claim == nil {
+	if tErr != nil {
+		mc.log.Error("Authentication error in handle set result of single match")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": tErr.Error(),
+			},
+		)
 		return
 	}
 
@@ -308,8 +178,9 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 		mc.log.Error("missing param")
 		c.JSON(http.StatusBadRequest,
 			gin.H{
-				"msg":   "failure",
-				"error": "missing param",
+				"msg":      "failure",
+				"error":    "missing param",
+				"username": claim.Username,
 			},
 		)
 		return
@@ -320,8 +191,9 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 		mc.log.Error("failed to set match result")
 		c.JSON(http.StatusInternalServerError,
 			gin.H{
-				"msg":   "failure",
-				"error": err.Error(),
+				"msg":      "failure",
+				"error":    err.Error(),
+				"username": claim.Username,
 			},
 		)
 		return
@@ -329,7 +201,8 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 
 	c.JSON(http.StatusOK,
 		gin.H{
-			"msg": "success",
+			"msg":      "success",
+			"username": claim.Username,
 		},
 	)
 }
@@ -349,9 +222,18 @@ func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
 		return
 	}
 
-	claim := mc.Authenticate(c, form.Token)
+	var ts *authentication.TokenService
+	claim, tErr := ts.VerifyToken(form.Token)
 
-	if claim == nil {
+	if tErr != nil {
+		mc.log.Error("Authentication error in handle set result of consolation match")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": tErr.Error(),
+			},
+		)
 		return
 	}
 
@@ -359,8 +241,9 @@ func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
 		mc.log.Error("missing param")
 		c.JSON(http.StatusBadRequest,
 			gin.H{
-				"msg":   "failure",
-				"error": "missing param",
+				"msg":      "failure",
+				"error":    "missing param",
+				"username": claim.Username,
 			},
 		)
 		return
@@ -371,8 +254,9 @@ func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
 		mc.log.Error("failed to set match result")
 		c.JSON(http.StatusInternalServerError,
 			gin.H{
-				"msg":   "failure",
-				"error": err.Error(),
+				"msg":      "failure",
+				"error":    err.Error(),
+				"username": claim.Username,
 			},
 		)
 		return
@@ -380,7 +264,8 @@ func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
 
 	c.JSON(http.StatusOK,
 		gin.H{
-			"msg": "success",
+			"msg":      "success",
+			"username": claim.Username,
 		},
 	)
 }
