@@ -52,16 +52,18 @@ func (mc *MatchController) HandlePing(c *gin.Context) {
 		return
 	}
 
-	var ts *authentication.TokenService
-	claim, tErr := ts.VerifyToken(form.Token)
+	log := authentication.ConfigureLogger()
+	ts := authentication.NewTokenService(log)
 
-	if tErr != nil {
+	claim, err := ts.VerifyToken(form.Token)
+
+	if err != nil {
 		mc.log.Error("Authentication error in handle ping")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
 				"msg":   "failure",
-				"error": tErr.Error(),
+				"error": err.Error(),
 			},
 		)
 		return
@@ -91,16 +93,18 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 		return
 	}
 
-	var ts *authentication.TokenService
-	claim, tErr := ts.VerifyToken(form.Token)
+	log := authentication.ConfigureLogger()
+	ts := authentication.NewTokenService(log)
 
-	if tErr != nil {
+	claim, err := ts.VerifyToken(form.Token)
+
+	if err != nil {
 		mc.log.Error("Authentication error in handle get match schedule")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
 				"msg":   "failure",
-				"error": tErr.Error(),
+				"error": err.Error(),
 			},
 		)
 		return
@@ -159,7 +163,9 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 		return
 	}
 
-	var ts *authentication.TokenService
+	log := authentication.ConfigureLogger()
+	ts := authentication.NewTokenService(log)
+
 	claim, tErr := ts.VerifyToken(form.Token)
 
 	if tErr != nil {
@@ -222,7 +228,9 @@ func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
 		return
 	}
 
-	var ts *authentication.TokenService
+	log := authentication.ConfigureLogger()
+	ts := authentication.NewTokenService(log)
+
 	claim, tErr := ts.VerifyToken(form.Token)
 
 	if tErr != nil {
