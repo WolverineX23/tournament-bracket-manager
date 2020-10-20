@@ -6,6 +6,7 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -15,9 +16,15 @@ import (
 	"github.com/bitspawngg/tournament-bracket-manager/models"
 	"github.com/bitspawngg/tournament-bracket-manager/services"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func CreateServer() *http.Server {
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	/*
 	 configure Logger
 	*/
@@ -26,11 +33,12 @@ func CreateServer() *http.Server {
 	/*
 	 configure Database
 	*/
-	db_type, exists := os.LookupEnv("DB_TYPE")
+	db_type, exists := os.LookupEnv("NEW_DB_TYPE")
 	if !exists {
 		log.Fatal("missing DB_TYPE environment variable")
 	}
-	db_path, exists := os.LookupEnv("DB_PATH")
+
+	db_path, exists := os.LookupEnv("NEW_DB_PATH")
 	if !exists {
 		log.Fatal("missing DB_PATH environment variable")
 	}

@@ -1,0 +1,3 @@
+{"controller":"token","level":"info","msg":"handle login and generate token","time":"2020-10-20T12:32:24+08:00"}
+{"controller":"match","level":"info","msg":"handling match schedule","time":"2020-10-20T12:33:17+08:00"}
+{"level":"info","msg":"Create single tournament successfully","services":"Match","time":"2020-10-20T12:33:17+08:00"}
