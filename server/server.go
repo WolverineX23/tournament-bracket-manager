@@ -26,12 +26,12 @@ func CreateServer() *http.Server {
 		log.Fatal("Error loading .env file")
 	}
 	/*
-	 configure Logger
+	  configure Logger
 	*/
 	log := authentication.ConfigureLogger()
 
 	/*
-	 configure Database
+	  configure Database
 	*/
 	db_type, exists := os.LookupEnv("NEW_DB_TYPE")
 	if !exists {
@@ -48,7 +48,7 @@ func CreateServer() *http.Server {
 	}
 
 	/*
-		Initialize Services
+	 Initialize Services
 	*/
 	ms := services.NewMatchService(
 		log,
@@ -56,37 +56,38 @@ func CreateServer() *http.Server {
 	)
 
 	/*
-		Initialize Controllers
+	 Initialize Controllers
 	*/
 	matchController := controllers.NewMatchController(log, ms)
 
 	/*
-		Initialize TokenService
+	 Initialize TokenService
 	*/
 	ts := authentication.NewTokenService(log)
 
 	/*
-		Initialize TokenController
+	 Initialize TokenController
 	*/
 	tokenController := authentication.NewTokenController(log, ts)
 
 	/*
-		Initialize gin
+	 Initialize gin
 	*/
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(CORSMiddleware())
 
 	// health check
-	r.GET("/login", tokenController.HandleLogin)
+	r.POST("/login", tokenController.HandleLogin)
 	r.GET("/verifytoken", tokenController.HandleVerify)
 	r.GET("/refreshtoken", tokenController.HandleRefreshToken)
+	r.POST("/refreshtable", matchController.HandleRefreshTable)
 	r.GET("/ping", matchController.HandlePing)
 	r.POST("/matchschedule", matchController.HandleGetMatchSchedule)
 	r.POST("/setresults", matchController.HandleSetMatchResultS)
 	r.POST("/setresultc", matchController.HandleSetMatchResultC)
 	/*
-		Start HTTP Server
+	 Start HTTP Server
 	*/
 	// initialize server
 	addr := fmt.Sprintf("%s:%d", "0.0.0.0", 8080)

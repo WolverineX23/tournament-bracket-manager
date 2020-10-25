@@ -160,3 +160,8 @@ func (ms *MatchService) SetMatchResultC(tournamentId string, round, table, resul
 		return nil
 	}
 }
+
+func (ms *MatchService) GetTour(id string) ([]models.Match,string, error) {
+	matches,err:=ms.db.GetMatchesByTournament(id)
+	return matches,id,err
+}

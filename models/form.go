@@ -13,3 +13,8 @@ type FormSetMatchResult struct {
 	Table        int    `json:"table"`
 	Result       int    `json:"result"`
 }
+
+type FormRefreshTable struct {
+	Token        string `json:"token"`
+	TournamentId string `json:"tournament_id"`
+}

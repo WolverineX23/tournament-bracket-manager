@@ -136,12 +136,51 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 		)
 		return
 	}
+	var res[][] string;
+	var temp[] string
+	memo:=brackets[0].Round
+	j:=-1;
+	for i:=0;i< len(brackets);i++{
+		if memo!=brackets[i].Round{
+			j++
+			memo=brackets[i].Round
+			res=append(res,temp)
+			temp=[]string{}
+		}
+		if brackets[i].TeamOne!="Unknown" {
+			temp = append(temp, brackets[i].TeamOne)
+		}else{
+			temp = append(temp, "")
+		}
+		if brackets[i].TeamTwo!="Unknown" {
+			temp = append(temp, brackets[i].TeamTwo)
+		}else{
+			temp = append(temp, "")
+		}
+
+		}
+		if len(temp)!=0 {
+			res=append(res,temp)
+		}
+
+	temp=[]string{}
+	if brackets[len(brackets)-1].Result==1{
+		temp=append(temp,brackets[len(brackets)-1].TeamOne)
+		res=append(res,temp)
+	}else {
+		if brackets[len(brackets)-1].Result==2 {
+			temp=append(temp,brackets[len(brackets)-1].TeamTwo)
+			res=append(res,temp)
+		}else {
+			temp=append(temp,"")
+			res=append(res,temp)
+		}
+	}
 
 	c.JSON(
 		http.StatusOK,
 		gin.H{
-			"msg":           "success",
-			"data":          brackets,
+			"data":          res,
 			"tournament_id": tid,
 			"username":      claim.Username,
 		},
@@ -179,19 +218,6 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 		)
 		return
 	}
-
-	if form.TournamentId == "" || form.Round == 0 || form.Table == 0 {
-		mc.log.Error("missing param")
-		c.JSON(http.StatusBadRequest,
-			gin.H{
-				"msg":      "failure",
-				"error":    "missing param",
-				"username": claim.Username,
-			},
-		)
-		return
-	}
-
 	err := mc.ms.SetMatchResultS(form.TournamentId, form.Round, form.Table, form.Result)
 	if err != nil {
 		mc.log.Error("failed to set match result")
@@ -205,10 +231,66 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK,
+	brackets, tid, err := mc.ms.GetTour(form.TournamentId)
+	if err != nil {
+		mc.log.Error("failed to get match schedule")
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"msg":      "failure",
+				"error":    err.Error(),
+				"username": claim.Username,
+			},
+		)
+		return
+	}
+	var res[][] string;
+	var temp[] string
+	memo:=brackets[0].Round
+	j:=-1;
+	for i:=0;i< len(brackets);i++{
+		if memo!=brackets[i].Round{
+			j++
+			memo=brackets[i].Round
+			res=append(res,temp)
+			temp=[]string{}
+		}
+		if brackets[i].TeamOne!="Unknown" {
+			temp = append(temp, brackets[i].TeamOne)
+		}else{
+			temp = append(temp, "")
+		}
+		if brackets[i].TeamTwo!="Unknown" {
+			temp = append(temp, brackets[i].TeamTwo)
+		}else{
+			temp = append(temp, "")
+		}
+
+	}
+	if len(temp)!=0 {
+		res=append(res,temp)
+	}
+	temp=[]string{}
+	if brackets[len(brackets)-1].Result==1{
+		temp=append(temp,brackets[len(brackets)-1].TeamOne)
+		res=append(res,temp)
+	}else {
+		if brackets[len(brackets)-1].Result==2 {
+			temp=append(temp,brackets[len(brackets)-1].TeamTwo)
+			res=append(res,temp)
+		}else {
+			temp=append(temp,"")
+			res=append(res,temp)
+		}
+	}
+
+
+	c.JSON(
+		http.StatusOK,
 		gin.H{
-			"msg":      "success",
-			"username": claim.Username,
+			"data":          res,
+			"tournament_id": tid,
+			"username":      claim.Username,
 		},
 	)
 }
@@ -274,6 +356,104 @@ func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
 		gin.H{
 			"msg":      "success",
 			"username": claim.Username,
+		},
+	)
+}
+
+
+
+func (mc *MatchController) HandleRefreshTable(c *gin.Context) {
+	mc.log.Info("handing set match result of single")
+	form := models.FormRefreshTable{}
+	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed to bind JSON")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure 1",
+				"error": err.Error(),
+			},
+		)
+		return
+	}
+
+	log := authentication.ConfigureLogger()
+	ts := authentication.NewTokenService(log)
+
+	claim, tErr := ts.VerifyToken(form.Token)
+
+	if tErr != nil {
+		mc.log.Error("Authentication error in handle set result of single match")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure 2",
+				"error": tErr.Error(),
+			},
+		)
+		return
+	}
+
+	brackets, tid, err := mc.ms.GetTour(form.TournamentId)
+	if err != nil {
+		mc.log.Error("failed to get match schedule")
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"msg":      "failure",
+				"error":    err.Error(),
+				"username": claim.Username,
+			},
+		)
+		return
+	}
+	var res[][] string;
+	var temp[] string
+	memo:=brackets[0].Round
+	j:=-1;
+	for i:=0;i< len(brackets);i++{
+		if memo!=brackets[i].Round{
+			j++
+			memo=brackets[i].Round
+			res=append(res,temp)
+			temp=[]string{}
+		}
+		if brackets[i].TeamOne!="Unknown" {
+			temp = append(temp, brackets[i].TeamOne)
+		}else{
+			temp = append(temp, "winner")
+		}
+		if brackets[i].TeamTwo!="Unknown" {
+			temp = append(temp, brackets[i].TeamTwo)
+		}else{
+			temp = append(temp, "winner")
+		}
+
+	}
+	if len(temp)!=0 {
+		res=append(res,temp)
+	}
+	temp=[]string{}
+	if brackets[len(brackets)-1].Result==1{
+		temp=append(temp,brackets[len(brackets)-1].TeamOne)
+		res=append(res,temp)
+	}else {
+		if brackets[len(brackets)-1].Result==2 {
+			temp=append(temp,brackets[len(brackets)-1].TeamTwo)
+			res=append(res,temp)
+		}else {
+			temp=append(temp,"winner")
+			res=append(res,temp)
+		}
+	}
+
+
+	c.JSON(
+		http.StatusOK,
+		gin.H{
+			"data":          res,
+			"tournament_id": tid,
+			"username":      claim.Username,
 		},
 	)
 }
