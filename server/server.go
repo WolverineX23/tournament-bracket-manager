@@ -10,12 +10,15 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/bitspawngg/tournament-bracket-manager/socketFunc"
+
 	"github.com/bitspawngg/tournament-bracket-manager/authentication"
 
 	"github.com/bitspawngg/tournament-bracket-manager/controllers"
 	"github.com/bitspawngg/tournament-bracket-manager/models"
 	"github.com/bitspawngg/tournament-bracket-manager/services"
 	"github.com/gin-gonic/gin"
+	socketio "github.com/googollee/go-socket.io"
 	"github.com/joho/godotenv"
 )
 
@@ -58,7 +61,14 @@ func CreateServer() *http.Server {
 	/*
 	 Initialize Controllers
 	*/
-	matchController := controllers.NewMatchController(log, ms)
+
+	socket_server, err := socketio.NewServer(nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	matchController := controllers.NewMatchController(log, ms, socket_server)
 
 	/*
 	 Initialize TokenService
@@ -77,6 +87,12 @@ func CreateServer() *http.Server {
 	r := gin.Default()
 	r.Use(CORSMiddleware())
 
+	socket_server.OnConnect("/", socketFunc.HandleSocketConn)
+
+	socket_server.OnError("/", socketFunc.HandleSocketError)
+
+	socket_server.OnDisconnect("/", socketFunc.HandleSocketDisconn)
+
 	// health check
 	r.POST("/login", tokenController.HandleLogin)
 	r.GET("/verifytoken", tokenController.HandleVerify)
@@ -86,6 +102,9 @@ func CreateServer() *http.Server {
 	r.POST("/matchschedule", matchController.HandleGetMatchSchedule)
 	r.POST("/setresults", matchController.HandleSetMatchResultS)
 	r.POST("/setresultc", matchController.HandleSetMatchResultC)
+
+	r.GET("/socketio/", gin.WrapH(socket_server))
+	r.POST("/socketio/", gin.WrapH(socket_server))
 	/*
 	 Start HTTP Server
 	*/

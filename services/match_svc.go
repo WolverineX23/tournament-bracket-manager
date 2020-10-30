@@ -161,7 +161,56 @@ func (ms *MatchService) SetMatchResultC(tournamentId string, round, table, resul
 	}
 }
 
-func (ms *MatchService) GetTour(id string) ([]models.Match,string, error) {
-	matches,err:=ms.db.GetMatchesByTournament(id)
-	return matches,id,err
+func (ms *MatchService) GetTour(id string) ([]models.Match, string, error) {
+	matches, err := ms.db.GetMatchesByTournament(id)
+	return matches, id, err
+}
+
+func (ms *MatchService) GetResult(matches []models.Match) [][]string {
+	var res [][]string
+	var temp []string
+	memo := matches[0].Round
+	j := -1
+	for i := 0; i < len(matches); i++ {
+		if memo != matches[i].Round {
+			j++
+			memo = matches[i].Round
+			res = append(res, temp)
+			temp = []string{}
+		}
+		if matches[i].TeamOne != "Unknown" {
+			temp = append(temp, matches[i].TeamOne)
+		} else {
+			temp = append(temp, "")
+		}
+		if matches[i].TeamTwo != "Unknown" {
+			temp = append(temp, matches[i].TeamTwo)
+		} else {
+			temp = append(temp, "")
+		}
+
+	}
+	if len(temp) != 0 {
+		res = append(res, temp)
+	}
+	temp = []string{}
+	if matches[len(matches)-1].Result == 1 {
+		temp = append(temp, matches[len(matches)-1].TeamOne)
+		res = append(res, temp)
+	} else {
+		if matches[len(matches)-1].Result == 2 {
+			temp = append(temp, matches[len(matches)-1].TeamTwo)
+			res = append(res, temp)
+		} else {
+			temp = append(temp, "")
+			res = append(res, temp)
+		}
+	}
+
+	return res
+}
+
+func (ms *MatchService) GetWinTeam(tournamentId string, round, table int) (string, error) {
+	winner, err := ms.db.GetWinTeamByStatus(tournamentId, round, table)
+	return winner, err
 }

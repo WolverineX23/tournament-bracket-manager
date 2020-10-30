@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/bitspawngg/tournament-bracket-manager/authentication"
@@ -8,18 +9,21 @@ import (
 	"github.com/bitspawngg/tournament-bracket-manager/models"
 	"github.com/bitspawngg/tournament-bracket-manager/services"
 	"github.com/gin-gonic/gin"
+	socketio "github.com/googollee/go-socket.io"
 	"github.com/sirupsen/logrus"
 )
 
 type MatchController struct {
-	log *logrus.Entry
-	ms  *services.MatchService
+	log           *logrus.Entry
+	ms            *services.MatchService
+	socket_server *socketio.Server
 }
 
-func NewMatchController(log *logrus.Logger, ms *services.MatchService) *MatchController {
+func NewMatchController(log *logrus.Logger, ms *services.MatchService, socket_server *socketio.Server) *MatchController {
 	return &MatchController{
-		log: log.WithField("controller", "match"),
-		ms:  ms,
+		log:           log.WithField("controller", "match"),
+		ms:            ms,
+		socket_server: socket_server,
 	}
 }
 
@@ -76,6 +80,7 @@ func (mc *MatchController) HandlePing(c *gin.Context) {
 			"claim": claim.Username,
 		},
 	)
+
 }
 
 func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
@@ -136,46 +141,8 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 		)
 		return
 	}
-	var res[][] string;
-	var temp[] string
-	memo:=brackets[0].Round
-	j:=-1;
-	for i:=0;i< len(brackets);i++{
-		if memo!=brackets[i].Round{
-			j++
-			memo=brackets[i].Round
-			res=append(res,temp)
-			temp=[]string{}
-		}
-		if brackets[i].TeamOne!="Unknown" {
-			temp = append(temp, brackets[i].TeamOne)
-		}else{
-			temp = append(temp, "")
-		}
-		if brackets[i].TeamTwo!="Unknown" {
-			temp = append(temp, brackets[i].TeamTwo)
-		}else{
-			temp = append(temp, "")
-		}
 
-		}
-		if len(temp)!=0 {
-			res=append(res,temp)
-		}
-
-	temp=[]string{}
-	if brackets[len(brackets)-1].Result==1{
-		temp=append(temp,brackets[len(brackets)-1].TeamOne)
-		res=append(res,temp)
-	}else {
-		if brackets[len(brackets)-1].Result==2 {
-			temp=append(temp,brackets[len(brackets)-1].TeamTwo)
-			res=append(res,temp)
-		}else {
-			temp=append(temp,"")
-			res=append(res,temp)
-		}
-	}
+	res := mc.ms.GetResult(brackets)
 
 	c.JSON(
 		http.StatusOK,
@@ -231,9 +198,11 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 		return
 	}
 
-	brackets, tid, err := mc.ms.GetTour(form.TournamentId)
+	round := form.Round + 1
+	table := (form.Round + 1) / 2
+	teamName, err := mc.ms.GetWinTeam(form.TournamentId, form.Round, form.Table)
 	if err != nil {
-		mc.log.Error("failed to get match schedule")
+		mc.log.Error("failed to get win team")
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{
@@ -244,55 +213,32 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 		)
 		return
 	}
-	var res[][] string;
-	var temp[] string
-	memo:=brackets[0].Round
-	j:=-1;
-	for i:=0;i< len(brackets);i++{
-		if memo!=brackets[i].Round{
-			j++
-			memo=brackets[i].Round
-			res=append(res,temp)
-			temp=[]string{}
-		}
-		if brackets[i].TeamOne!="Unknown" {
-			temp = append(temp, brackets[i].TeamOne)
-		}else{
-			temp = append(temp, "")
-		}
-		if brackets[i].TeamTwo!="Unknown" {
-			temp = append(temp, brackets[i].TeamTwo)
-		}else{
-			temp = append(temp, "")
-		}
-
-	}
-	if len(temp)!=0 {
-		res=append(res,temp)
-	}
-	temp=[]string{}
-	if brackets[len(brackets)-1].Result==1{
-		temp=append(temp,brackets[len(brackets)-1].TeamOne)
-		res=append(res,temp)
-	}else {
-		if brackets[len(brackets)-1].Result==2 {
-			temp=append(temp,brackets[len(brackets)-1].TeamTwo)
-			res=append(res,temp)
-		}else {
-			temp=append(temp,"")
-			res=append(res,temp)
-		}
-	}
-
 
 	c.JSON(
 		http.StatusOK,
 		gin.H{
-			"data":          res,
-			"tournament_id": tid,
+			"round":         round,
+			"tournament_id": form.TournamentId,
+			"table":         table,
+			"team_name":     teamName,
 			"username":      claim.Username,
 		},
 	)
+
+	inform := models.FormWinner{
+		TournamentId: form.TournamentId,
+		Round:        round,
+		Table:        table,
+		TeamName:     teamName,
+	}
+
+	data, err := json.Marshal(inform)
+	if err != nil {
+		mc.log.Error("failed to marshal json for inform")
+	}
+	// broadcast
+	mc.socket_server.BroadcastToRoom("", "tournament", "update", data)
+
 }
 
 func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
@@ -360,8 +306,6 @@ func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
 	)
 }
 
-
-
 func (mc *MatchController) HandleRefreshTable(c *gin.Context) {
 	mc.log.Info("handing set match result of single")
 	form := models.FormRefreshTable{}
@@ -407,46 +351,8 @@ func (mc *MatchController) HandleRefreshTable(c *gin.Context) {
 		)
 		return
 	}
-	var res[][] string;
-	var temp[] string
-	memo:=brackets[0].Round
-	j:=-1;
-	for i:=0;i< len(brackets);i++{
-		if memo!=brackets[i].Round{
-			j++
-			memo=brackets[i].Round
-			res=append(res,temp)
-			temp=[]string{}
-		}
-		if brackets[i].TeamOne!="Unknown" {
-			temp = append(temp, brackets[i].TeamOne)
-		}else{
-			temp = append(temp, "winner")
-		}
-		if brackets[i].TeamTwo!="Unknown" {
-			temp = append(temp, brackets[i].TeamTwo)
-		}else{
-			temp = append(temp, "winner")
-		}
 
-	}
-	if len(temp)!=0 {
-		res=append(res,temp)
-	}
-	temp=[]string{}
-	if brackets[len(brackets)-1].Result==1{
-		temp=append(temp,brackets[len(brackets)-1].TeamOne)
-		res=append(res,temp)
-	}else {
-		if brackets[len(brackets)-1].Result==2 {
-			temp=append(temp,brackets[len(brackets)-1].TeamTwo)
-			res=append(res,temp)
-		}else {
-			temp=append(temp,"winner")
-			res=append(res,temp)
-		}
-	}
-
+	res := mc.ms.GetResult(brackets)
 
 	c.JSON(
 		http.StatusOK,

@@ -11,7 +11,7 @@ import (
 )
 
 type Match struct {
-	ID 			 uint   `json:"id" gorm:"primary_key"`
+	ID           uint   `json:"id" gorm:"primary_key"`
 	TournamentID string `json:"tournamentId"`
 	Round        int    `json:"round"`
 	Table        int    `json:"table"`
@@ -63,6 +63,23 @@ func (db DB) DeleteMatch(tournamentId string, round, table int) error {
 		return err
 	}
 	return nil
+}
+
+func (db DB) GetWinTeamByStatus(tournamentId string, round, table int) (string, error) {
+	match := Match{}
+	err := db.DB.Where(`"tournament_id" = ? AND "round" = ? AND "table" = ?`, tournamentId, round, table).First(&match).Error
+	if err != nil {
+		return "", err
+	}
+	if match.Result == 1 {
+		return match.TeamOne, nil
+	} else {
+		if match.Result == 2 {
+			return match.TeamTwo, nil
+		} else {
+			return "Unknown", nil
+		}
+	}
 }
 
 //当输入一个对战结果，更新该组match的result and status,并返回关联到的PendingMatch
