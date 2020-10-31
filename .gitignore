@@ -17,3 +17,5 @@
 # config
 .env
 ./test/.env
+
+bin

@@ -20,3 +20,9 @@ func HandleSocketDisconn(s socketio.Conn, msg string) {
 func HandleSocketError(s socketio.Conn, err error) {
 	fmt.Println("meet error:", err)
 }
+
+func HandlePing(s socketio.Conn, msg string) string {
+	fmt.Println("Receive ping: " + msg)
+	s.Emit("pong", "{ data: 2333 }")
+	return "recv" + msg
+}

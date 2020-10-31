@@ -25,3 +25,11 @@ type FormWinner struct {
 	Table        int    `json:"table"`
 	TeamName     string `json:"team_name"`
 }
+
+type FormToken struct {
+	Token string `json:"token"`
+}
+type FormGetRate struct {
+	Token string `json:"token"`
+	Team  string `json:"team"`
+}

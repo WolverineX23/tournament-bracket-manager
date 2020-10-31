@@ -89,6 +89,8 @@ func CreateServer() *http.Server {
 
 	socket_server.OnConnect("/", socketFunc.HandleSocketConn)
 
+	socket_server.OnEvent("/", "ping", socketFunc.HandlePing)
+
 	socket_server.OnError("/", socketFunc.HandleSocketError)
 
 	socket_server.OnDisconnect("/", socketFunc.HandleSocketDisconn)
@@ -102,9 +104,11 @@ func CreateServer() *http.Server {
 	r.POST("/matchschedule", matchController.HandleGetMatchSchedule)
 	r.POST("/setresults", matchController.HandleSetMatchResultS)
 	r.POST("/setresultc", matchController.HandleSetMatchResultC)
+	r.POST("/getalltournamentid", matchController.HandleGetAlltournamentID)
+	r.POST("/getrate", matchController.HandleGetRate)
 
-	r.GET("/socketio/", gin.WrapH(socket_server))
-	r.POST("/socketio/", gin.WrapH(socket_server))
+	r.GET("/socket.io/*any", gin.WrapH(socket_server))
+	r.POST("/socket.io/*any", gin.WrapH(socket_server))
 	/*
 	 Start HTTP Server
 	*/
@@ -120,7 +124,7 @@ func CreateServer() *http.Server {
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:8081")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, X-Auth-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
@@ -129,6 +133,8 @@ func CORSMiddleware() gin.HandlerFunc {
 			c.AbortWithStatus(204)
 			return
 		}
+
+		c.Request.Header.Del("Origin")
 
 		c.Next()
 	}

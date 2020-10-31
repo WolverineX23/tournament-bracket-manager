@@ -7,6 +7,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/bitspawngg/tournament-bracket-manager/models"
 	uuid "github.com/satori/go.uuid"
@@ -213,4 +214,65 @@ func (ms *MatchService) GetResult(matches []models.Match) [][]string {
 func (ms *MatchService) GetWinTeam(tournamentId string, round, table int) (string, error) {
 	winner, err := ms.db.GetWinTeamByStatus(tournamentId, round, table)
 	return winner, err
+}
+
+func (ms *MatchService) GetAllTourID() ([]string, error) {
+	var tournamentId []string
+	matches := make([]models.Match, 0)
+	err := ms.db.DB.Find(&matches).Error
+	if err != nil {
+		return nil, err
+	}
+	flag := false
+	for i := 0; i < len(matches); i++ {
+		flag = false
+		for j := 0; j < len(tournamentId); j++ {
+			if matches[i].TournamentID == tournamentId[j] {
+				flag = true
+				break
+			}
+		}
+		if flag == false {
+			tournamentId = append(tournamentId, matches[i].TournamentID)
+		}
+	}
+	return tournamentId, nil
+}
+
+func (ms *MatchService) GetChampion(tournamentId string) (string, error) {
+	matches, err := ms.db.GetMatchesByTournament(tournamentId)
+	if err != nil {
+		return "", err
+	}
+	thisMatch, err := ms.db.GetMatch(tournamentId, int(math.Log2(float64(len(matches)))+1), 1)
+	if thisMatch.Result == 0 {
+		return "", nil
+	}
+	if thisMatch.Result == 1 {
+		return thisMatch.TeamOne, nil
+	}
+	return thisMatch.TeamTwo, nil
+
+}
+
+func (ms *MatchService) GetRateOfWinning(Team string) (float64, error) {
+	tournamentId, err := ms.GetAllTourID()
+	if err != nil {
+		return -1, err
+	}
+	var cntOfWinning int
+	cntOfWinning = 0
+	for i := 0; i < len(tournamentId); i++ {
+		winner, err := ms.GetChampion(tournamentId[i])
+		if err != nil {
+			return -1, err
+		}
+		if winner == Team {
+			cntOfWinning++
+		}
+	}
+	rate := float64(cntOfWinning) / float64(len(tournamentId))
+	rate *= 100
+	rate = math.Trunc(rate*1e2+0.5) * 1e-2
+	return rate, nil
 }

@@ -363,3 +363,110 @@ func (mc *MatchController) HandleRefreshTable(c *gin.Context) {
 		},
 	)
 }
+
+func (mc *MatchController) HandleGetAlltournamentID(c *gin.Context) {
+	mc.log.Info("handing get all tournamentId")
+	form := models.FormToken{}
+	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed to bind JSON")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure 1",
+				"error": err.Error(),
+			},
+		)
+		return
+	}
+
+	log := authentication.ConfigureLogger()
+	ts := authentication.NewTokenService(log)
+
+	claim, tErr := ts.VerifyToken(form.Token)
+
+	if tErr != nil {
+		mc.log.Error("Authentication error in handle set result of single match")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure 2",
+				"error": tErr.Error(),
+			},
+		)
+		return
+	}
+
+	tournamentId, err := mc.ms.GetAllTourID()
+	if err != nil {
+		mc.log.Error("failed to get tournamentId")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error":    err,
+				"username": claim.Username,
+			},
+		)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		gin.H{
+			"data":     tournamentId,
+			"username": claim.Username,
+		},
+	)
+
+}
+func (mc *MatchController) HandleGetRate(c *gin.Context) {
+	mc.log.Info("handing get rate")
+	form := models.FormGetRate{}
+	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed to bind JSON")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure 1",
+				"error": err.Error(),
+			},
+		)
+		return
+	}
+
+	log := authentication.ConfigureLogger()
+	ts := authentication.NewTokenService(log)
+
+	claim, tErr := ts.VerifyToken(form.Token)
+
+	if tErr != nil {
+		mc.log.Error("Authentication error in handle set result of single match")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure 2",
+				"error": tErr.Error(),
+			},
+		)
+		return
+	}
+
+	rate, err := mc.ms.GetRateOfWinning(form.Team)
+	if err != nil {
+		mc.log.Error("failed to get tournamentId")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error":    err,
+				"username": claim.Username,
+			},
+		)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		gin.H{
+			"data":     rate,
+			"username": claim.Username,
+		},
+	)
+
+}
