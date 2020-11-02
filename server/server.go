@@ -6,11 +6,9 @@ package server
 
 import (
 	"fmt"
-	"log"
-	"net/http"
-	"os"
-
 	"github.com/bitspawngg/tournament-bracket-manager/socketFunc"
+	"log"
+	"os"
 
 	"github.com/bitspawngg/tournament-bracket-manager/authentication"
 
@@ -22,7 +20,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func CreateServer() *http.Server {
+type MatchServer struct {
+	Router       *gin.Engine
+	SocketServer *socketio.Server
+}
+
+func CreateServer() *MatchServer {
 
 	err := godotenv.Load()
 	if err != nil {
@@ -31,69 +34,62 @@ func CreateServer() *http.Server {
 	/*
 	  configure Logger
 	*/
-	log := authentication.ConfigureLogger()
+	logger := authentication.ConfigureLogger()
 
 	/*
 	  configure Database
 	*/
-	db_type, exists := os.LookupEnv("NEW_DB_TYPE")
+	dbType, exists := os.LookupEnv("NEW_DB_TYPE")
 	if !exists {
-		log.Fatal("missing DB_TYPE environment variable")
+		logger.Fatal("missing DB_TYPE environment variable")
 	}
 
-	db_path, exists := os.LookupEnv("NEW_DB_PATH")
+	dbPath, exists := os.LookupEnv("NEW_DB_PATH")
 	if !exists {
-		log.Fatal("missing DB_PATH environment variable")
+		logger.Fatal("missing DB_PATH environment variable")
 	}
-	db := models.NewDB(db_type, db_path)
+	db := models.NewDB(dbType, dbPath)
 	if err := db.Connect(); err != nil {
-		log.Fatal("db connection failed")
+		logger.Fatal("db connection failed")
 	}
 
 	/*
 	 Initialize Services
 	*/
-	ms := services.NewMatchService(
-		log,
-		db,
-	)
 
 	/*
 	 Initialize Controllers
 	*/
 
-	socket_server, err := socketio.NewServer(nil)
+	socketServer, err := socketio.NewServer(nil)
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
-	matchController := controllers.NewMatchController(log, ms, socket_server)
+	ms := services.NewMatchService(logger, db)
+	ts := authentication.NewTokenService(logger)
 
-	/*
-	 Initialize TokenService
-	*/
-	ts := authentication.NewTokenService(log)
-
-	/*
-	 Initialize TokenController
-	*/
-	tokenController := authentication.NewTokenController(log, ts)
+	matchController := controllers.NewMatchController(logger, ms, socketServer)
+	tokenController := authentication.NewTokenController(logger, ts)
 
 	/*
 	 Initialize gin
 	*/
-	gin.SetMode(gin.ReleaseMode)
+	// gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(CORSMiddleware())
 
-	socket_server.OnConnect("/", socketFunc.HandleSocketConn)
+	socketServer.OnConnect("/", socketFunc.HandleSocketConn)
+	socketServer.OnEvent("/", "ping", func(s socketio.Conn) string {
+		fmt.Println(s.Context().(string))
+		return "23333"
+	})
+	socketServer.OnError("/", socketFunc.HandleSocketError)
+	socketServer.OnDisconnect("/", socketFunc.HandleSocketDisconn)
 
-	socket_server.OnEvent("/", "ping", socketFunc.HandlePing)
-
-	socket_server.OnError("/", socketFunc.HandleSocketError)
-
-	socket_server.OnDisconnect("/", socketFunc.HandleSocketDisconn)
+	// go socket_server.Serve()
+	// defer socket_server.Close()
 
 	// health check
 	r.POST("/login", tokenController.HandleLogin)
@@ -107,19 +103,19 @@ func CreateServer() *http.Server {
 	r.POST("/getalltournamentid", matchController.HandleGetAlltournamentID)
 	r.POST("/getrate", matchController.HandleGetRate)
 
-	r.GET("/socket.io/*any", gin.WrapH(socket_server))
-	r.POST("/socket.io/*any", gin.WrapH(socket_server))
+	r.GET("/socket.io/", gin.WrapH(socketServer))
+	r.POST("/socket.io/", gin.WrapH(socketServer))
 	/*
 	 Start HTTP Server
 	*/
 	// initialize server
-	addr := fmt.Sprintf("%s:%d", "0.0.0.0", 8080)
-	server := makeServer(addr, r)
+	// addr := fmt.Sprintf("%s:%d", "0.0.0.0", 8080)
+	// server := makeServer(addr, r)
 
 	// handle graceful shutdown
-	go handleGracefulShutdown(server)
+	// go handleGracefulShutdown(socket_server)
 
-	return server
+	return &MatchServer{Router: r, SocketServer: socketServer}
 }
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -133,7 +129,6 @@ func CORSMiddleware() gin.HandlerFunc {
 			c.AbortWithStatus(204)
 			return
 		}
-
 		c.Request.Header.Del("Origin")
 
 		c.Next()

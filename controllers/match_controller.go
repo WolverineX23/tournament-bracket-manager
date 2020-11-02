@@ -14,16 +14,16 @@ import (
 )
 
 type MatchController struct {
-	log           *logrus.Entry
-	ms            *services.MatchService
-	socket_server *socketio.Server
+	log          *logrus.Entry
+	ms           *services.MatchService
+	socketServer *socketio.Server
 }
 
-func NewMatchController(log *logrus.Logger, ms *services.MatchService, socket_server *socketio.Server) *MatchController {
+func NewMatchController(log *logrus.Logger, ms *services.MatchService, socketServer *socketio.Server) *MatchController {
 	return &MatchController{
-		log:           log.WithField("controller", "match"),
-		ms:            ms,
-		socket_server: socket_server,
+		log:          log.WithField("controller", "match"),
+		ms:           ms,
+		socketServer: socketServer,
 	}
 }
 
@@ -237,7 +237,7 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 		mc.log.Error("failed to marshal json for inform")
 	}
 	// broadcast
-	mc.socket_server.BroadcastToRoom("", "tournament", "update", data)
+	mc.socketServer.BroadcastToRoom("", "tournament", "update", data)
 
 }
 

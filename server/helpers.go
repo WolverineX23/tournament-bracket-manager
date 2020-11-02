@@ -5,11 +5,11 @@
 package server
 
 import (
+	socketio "github.com/googollee/go-socket.io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-
 )
 
 func makeServer(addr string, r http.Handler) *http.Server {
@@ -19,7 +19,7 @@ func makeServer(addr string, r http.Handler) *http.Server {
 	}
 }
 
-func handleGracefulShutdown(server *http.Server) {
+func HandleGracefulShutdown(server *socketio.Server) {
 
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
