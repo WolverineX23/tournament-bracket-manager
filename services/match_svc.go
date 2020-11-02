@@ -255,24 +255,62 @@ func (ms *MatchService) GetChampion(tournamentId string) (string, error) {
 
 }
 
-func (ms *MatchService) GetRateOfWinning(Team string) (float64, error) {
-	tournamentId, err := ms.GetAllTourID()
+func (ms *MatchService) GetTeams(tournamentId string) ([]string, error) {
+	matches, err := ms.db.GetMatchesByTournament(tournamentId)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
+	flag1 := false
+	flag2 := false
+	var teams []string
+	for i := 0; i < len(matches); i++ {
+		flag1 = false
+		flag2 = false
+		for j := 0; j < len(teams); j++ {
+			if matches[i].TeamOne == teams[j] {
+				flag1 = true
+			}
+			if matches[i].TeamTwo == teams[j] {
+				flag2 = true
+			}
+		}
+		if flag1 == false {
+			teams = append(teams, matches[i].TeamOne)
+		}
+		if flag2 == false {
+			teams = append(teams, matches[i].TeamTwo)
+		}
+	}
+	return teams, nil
+}
+func (ms *MatchService) GetRateOfWinning(tournamentId string) ([]float64, error) {
+	tournamentIds, err := ms.GetAllTourID()
+	if err != nil {
+		return nil, err
+	}
+	Teams, err := ms.GetTeams(tournamentId)
+	if err != nil {
+		return nil, err
+	}
+	var rates []float64
 	var cntOfWinning int
 	cntOfWinning = 0
-	for i := 0; i < len(tournamentId); i++ {
-		winner, err := ms.GetChampion(tournamentId[i])
-		if err != nil {
-			return -1, err
+	for j := 0; j < len(Teams); j++ {
+		cntOfWinning = 0
+		for i := 0; i < len(tournamentIds); i++ {
+			winner, err := ms.GetChampion(tournamentIds[i])
+			if err != nil {
+				return nil, err
+			}
+			if winner == Teams[j] {
+				cntOfWinning++
+			}
 		}
-		if winner == Team {
-			cntOfWinning++
-		}
+		rate := float64(cntOfWinning) / float64(len(tournamentIds))
+		rate *= 100
+		rate = math.Trunc(rate*1e2+0.5) * 1e-2
+		rates = append(rates, rate)
+		rate = 0
 	}
-	rate := float64(cntOfWinning) / float64(len(tournamentId))
-	rate *= 100
-	rate = math.Trunc(rate*1e2+0.5) * 1e-2
-	return rate, nil
+	return rates, nil
 }

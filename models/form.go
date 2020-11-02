@@ -30,6 +30,6 @@ type FormToken struct {
 	Token string `json:"token"`
 }
 type FormGetRate struct {
-	Token string `json:"token"`
-	Team  string `json:"team"`
+	Token        string `json:"token"`
+	TournamentId string `json:"tournament_id"`
 }

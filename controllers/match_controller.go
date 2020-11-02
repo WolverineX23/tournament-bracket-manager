@@ -449,7 +449,7 @@ func (mc *MatchController) HandleGetRate(c *gin.Context) {
 		return
 	}
 
-	rate, err := mc.ms.GetRateOfWinning(form.Team)
+	rate, err := mc.ms.GetRateOfWinning(form.TournamentId)
 	if err != nil {
 		mc.log.Error("failed to get tournamentId")
 		c.JSON(
@@ -462,7 +462,7 @@ func (mc *MatchController) HandleGetRate(c *gin.Context) {
 		return
 	}
 	c.JSON(
-		http.StatusOK,
+		http.StatusBadRequest,
 		gin.H{
 			"data":     rate,
 			"username": claim.Username,
