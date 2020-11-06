@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/bitspawngg/tournament-bracket-manager/authentication"
@@ -225,19 +226,22 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 		},
 	)
 
-	inform := models.FormWinner{
-		TournamentId: form.TournamentId,
-		Round:        round,
-		Table:        table,
-		TeamName:     teamName,
+	inform := models.FormRefresh{
+		Status:   "success",
+		Round:    round,
+		Table:    table,
+		TeamName: teamName,
 	}
 
 	data, err := json.Marshal(inform)
 	if err != nil {
+		fmt.Println(err)
 		mc.log.Error("failed to marshal json for inform")
+		return
 	}
 	// broadcast
-	mc.socketServer.BroadcastToRoom("", "tournament", "update", data)
+	fmt.Println(string(data))
+	mc.socketServer.BroadcastToRoom("", form.TournamentId, "refresh", string(data))
 
 }
 
@@ -415,8 +419,8 @@ func (mc *MatchController) HandleGetAlltournamentID(c *gin.Context) {
 			"username": claim.Username,
 		},
 	)
-
 }
+
 func (mc *MatchController) HandleGetRate(c *gin.Context) {
 	mc.log.Info("handing get rate")
 	form := models.FormGetRate{}
@@ -462,11 +466,10 @@ func (mc *MatchController) HandleGetRate(c *gin.Context) {
 		return
 	}
 	c.JSON(
-		http.StatusBadRequest,
+		http.StatusOK,
 		gin.H{
 			"data":     rate,
 			"username": claim.Username,
 		},
 	)
-
 }

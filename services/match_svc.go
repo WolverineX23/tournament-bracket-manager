@@ -26,14 +26,14 @@ func NewMatchService(log *logrus.Logger, db *models.DB) *MatchService {
 	}
 }
 
-func JudgeTeamNumber(n int) bool {
+func (ms *MatchService) JudgeTeamNumber(n int) bool {
 	if n <= 0 {
 		return false
 	}
 	return n&(n-1) == 0
 }
 
-func GetMatchCount(n int) int {
+func (ms *MatchService) GetMatchCount(n int) int {
 	count := 0
 	i := 0
 	temp := n
@@ -50,7 +50,7 @@ func GetMatchCount(n int) int {
 func (ms *MatchService) GetMatchSchedule(teams []string, format string) ([]models.Match, string, error) {
 	//根据传入队伍，初始化每场对战数据
 	// implement proper check for number of teams in the next line
-	if !JudgeTeamNumber(len(teams)) {
+	if !ms.JudgeTeamNumber(len(teams)) {
 		ms.log.Error("number og teams not a power of 2")
 		return nil, "", errors.New("number of teams not a power of 2")
 	}
@@ -80,7 +80,7 @@ func (ms *MatchService) GetMatchSchedule(teams []string, format string) ([]model
 		}
 		ms.log.Info("Create single tournament successfully")
 	} else if format == "CONSOLATION" {
-		count := GetMatchCount(len(teams)) //获取安慰赛总比赛场次count
+		count := ms.GetMatchCount(len(teams)) //获取安慰赛总比赛场次count
 		round := 0
 		sub := len(teams) / 2
 
@@ -105,7 +105,7 @@ func (ms *MatchService) GetMatchSchedule(teams []string, format string) ([]model
 		ms.log.Info("Create consolation tournament successfully")
 	} else {
 		ms.log.Error("Unsupported tournament format")
-		return nil, "", fmt.Errorf("Unsupported tournament format [%s]", format)
+		return nil, "", fmt.Errorf("Unsupported tournament format [%s] ", format)
 	}
 
 	return matches, uuid4, nil
@@ -245,6 +245,9 @@ func (ms *MatchService) GetChampion(tournamentId string) (string, error) {
 		return "", err
 	}
 	thisMatch, err := ms.db.GetMatch(tournamentId, int(math.Log2(float64(len(matches)))+1), 1)
+	if err != nil {
+		return "", nil
+	}
 	if thisMatch.Result == 0 {
 		return "", nil
 	}

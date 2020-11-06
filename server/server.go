@@ -5,8 +5,6 @@
 package server
 
 import (
-	"fmt"
-	"github.com/bitspawngg/tournament-bracket-manager/socketFunc"
 	"log"
 	"os"
 
@@ -69,9 +67,11 @@ func CreateServer() *MatchServer {
 
 	ms := services.NewMatchService(logger, db)
 	ts := authentication.NewTokenService(logger)
+	ss := services.NewSocketService(logger)
 
 	matchController := controllers.NewMatchController(logger, ms, socketServer)
 	tokenController := authentication.NewTokenController(logger, ts)
+	socketController := controllers.NewSocketController(logger, ss)
 
 	/*
 	 Initialize gin
@@ -80,13 +80,11 @@ func CreateServer() *MatchServer {
 	r := gin.Default()
 	r.Use(CORSMiddleware())
 
-	socketServer.OnConnect("/", socketFunc.HandleSocketConn)
-	socketServer.OnEvent("/", "ping", func(s socketio.Conn) string {
-		fmt.Println(s.Context().(string))
-		return "23333"
-	})
-	socketServer.OnError("/", socketFunc.HandleSocketError)
-	socketServer.OnDisconnect("/", socketFunc.HandleSocketDisconn)
+	socketServer.OnConnect("/", socketController.HandleConnect)
+	socketServer.OnEvent("/", "ping", socketController.HandlePing)
+	socketServer.OnError("/", socketController.HandleError)
+	socketServer.OnDisconnect("/", socketController.HandleDisconnect)
+	socketServer.OnEvent("/", "join", socketController.HandleJoin)
 
 	// go socket_server.Serve()
 	// defer socket_server.Close()
@@ -95,6 +93,7 @@ func CreateServer() *MatchServer {
 	r.POST("/login", tokenController.HandleLogin)
 	r.GET("/verifytoken", tokenController.HandleVerify)
 	r.GET("/refreshtoken", tokenController.HandleRefreshToken)
+
 	r.POST("/refreshtable", matchController.HandleRefreshTable)
 	r.GET("/ping", matchController.HandlePing)
 	r.POST("/matchschedule", matchController.HandleGetMatchSchedule)
