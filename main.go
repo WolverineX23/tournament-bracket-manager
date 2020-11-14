@@ -27,7 +27,6 @@ func main() {
 	if err == http.ErrServerClosed {
 		log.Println("server shutting down gracefully...")
 	} else {
-
 		log.Println("unexpected server shutdown...")
 		log.Println("ERR: ", err)
 	}

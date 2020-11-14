@@ -153,6 +153,7 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 			"username":      claim.Username,
 		},
 	)
+
 }
 
 func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
@@ -229,7 +230,7 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 	inform := models.FormRefresh{
 		Status:   "success",
 		Round:    round,
-		Table:    table,
+		Table:    form.Table,
 		TeamName: teamName,
 	}
 
