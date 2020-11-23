@@ -92,16 +92,16 @@ func CreateServer() *MatchServer {
 	// defer socket_server.Close()
 
 	// health check
-	r.POST("/login", tokenController.HandleLogin)
-	r.GET("/verifytoken", tokenController.HandleVerify)
-	r.GET("/refreshtoken", tokenController.HandleRefreshToken)
-	r.POST("/refreshtable", matchController.HandleRefreshTable)
+	r.POST("/login", tokenController.HandleLogin)                             //1
+	r.GET("/verifytoken", tokenController.HandleVerify)                       //1
+	r.GET("/refreshtoken", tokenController.HandleRefreshToken)                //1
+	r.GET("/matchschedule/:tournamentID", matchController.HandleRefreshTable) //1
 	r.GET("/ping", matchController.HandlePing)
-	r.POST("/matchschedule", matchController.HandleGetMatchSchedule)
-	r.POST("/setresults", matchController.HandleSetMatchResultS)
+	r.POST("/matchschedule", matchController.HandleGetMatchSchedule)       //1
+	r.POST("/result/:tournamentID", matchController.HandleSetMatchResultS) //
 	r.POST("/setresultc", matchController.HandleSetMatchResultC)
-	r.POST("/getalltournamentid", matchController.HandleGetAlltournamentID)
-	r.POST("/getrate", matchController.HandleGetRate)
+	r.GET("/alltournament", matchController.HandleGetAlltournamentID) //1
+	r.GET("/getrate/:tournamentID", matchController.HandleGetRate)    //1
 
 	r.GET("/socket.io/", gin.WrapH(socketServer))
 	r.POST("/socket.io/", gin.WrapH(socketServer))

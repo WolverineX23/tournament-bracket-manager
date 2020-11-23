@@ -68,21 +68,8 @@ func (tc *TokenController) HandleLogin(c *gin.Context) {
 
 func (tc *TokenController) HandleVerify(c *gin.Context) {
 	tc.log.Info("handling verify token")
-	form := Token{}
-
-	if err := c.ShouldBindJSON(&form); err != nil {
-		tc.log.Error("failed to bind JSON in hadnle verify")
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"msg":   "failure",
-				"error": err.Error(),
-			},
-		)
-		return
-	}
-
-	if form.Token == "" {
+	Token := c.GetHeader("token")
+	if Token == "" {
 		tc.log.Error("missing mandatory input parameter in function HandleVerify")
 		c.JSON(
 			http.StatusBadRequest,
@@ -94,7 +81,7 @@ func (tc *TokenController) HandleVerify(c *gin.Context) {
 		return
 	}
 
-	claim, err := tc.ts.VerifyToken(form.Token)
+	claim, err := tc.ts.VerifyToken(Token)
 
 	if err != nil {
 		tc.log.Error("authentication error in handle verify")
@@ -118,21 +105,9 @@ func (tc *TokenController) HandleVerify(c *gin.Context) {
 
 func (tc *TokenController) HandleRefreshToken(c *gin.Context) {
 	tc.log.Info("handle refresh token")
-	form := Token{}
+	Token := c.GetHeader("token")
 
-	if err := c.ShouldBindJSON(&form); err != nil {
-		tc.log.Error("failed to bind JSON in hadnle verify")
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"msg":   "failure",
-				"error": err.Error(),
-			},
-		)
-		return
-	}
-
-	if form.Token == "" {
+	if Token == "" {
 		tc.log.Error("missing mandatory input parameter in function HandleVerify")
 		c.JSON(
 			http.StatusBadRequest,
@@ -144,7 +119,7 @@ func (tc *TokenController) HandleRefreshToken(c *gin.Context) {
 		return
 	}
 
-	claim, err := tc.ts.VerifyToken(form.Token)
+	claim, err := tc.ts.VerifyToken(Token)
 
 	if err != nil {
 		tc.log.Error("authentication error in handle refresh token")
