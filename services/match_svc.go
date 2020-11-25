@@ -162,9 +162,9 @@ func (ms *MatchService) SetMatchResultC(tournamentId string, round, table, resul
 	}
 }
 
-func (ms *MatchService) GetTour(id string) ([]models.Match, string, error) {
+func (ms *MatchService) GetTour(id string) ([]models.Match, error) {
 	matches, err := ms.db.GetMatchesByTournament(id)
-	return matches, id, err
+	return matches, err
 }
 
 func (ms *MatchService) GetResult(matches []models.Match) [][]string {

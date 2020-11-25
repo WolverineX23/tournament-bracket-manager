@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"encoding/json"
-	"github.com/bitspawngg/tournament-bracket-manager/authentication"
 	"net/http"
+
+	"github.com/bitspawngg/tournament-bracket-manager/authentication"
 
 	"github.com/bitspawngg/tournament-bracket-manager/models"
 	"github.com/bitspawngg/tournament-bracket-manager/services"
@@ -32,12 +33,12 @@ func (mc *MatchController) HandlePing(c *gin.Context) {
 	Token := c.GetHeader("token")
 
 	if Token == "" {
-		mc.log.Error("missing mandatory input parameter in function HandleVerify")
+		mc.log.Error("anthentication error:token is null in handling 'ping' require")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
 				"msg":   "failure",
-				"error": "missing mandatory input parameter in function HandleVerify",
+				"error": "token is null",
 			},
 		)
 		return
@@ -73,14 +74,14 @@ func (mc *MatchController) HandlePing(c *gin.Context) {
 func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 	mc.log.Info("handling match schedule")
 	Token := c.GetHeader("token")
-	form := models.FormGetMatchSchedule{}
-	if err := c.ShouldBindJSON(&form); err != nil {
-		mc.log.Error("failed to bind JSON in handle get match schedule")
+
+	if Token == "" {
+		mc.log.Error("anthentication error:token is null in handling 'matchschedule' require")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
 				"msg":   "failure",
-				"error": err.Error(),
+				"error": "token is null",
 			},
 		)
 		return
@@ -98,6 +99,20 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 			gin.H{
 				"msg":   "failure",
 				"error": err.Error(),
+			},
+		)
+		return
+	}
+
+	form := models.FormGetMatchSchedule{}
+	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed to bind JSON in handle get match schedule")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":      "failure",
+				"error":    err.Error(),
+				"username": claim.Username,
 			},
 		)
 		return
@@ -144,16 +159,16 @@ func (mc *MatchController) HandleGetMatchSchedule(c *gin.Context) {
 
 func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 	mc.log.Info("handing set match result of single")
-	form := models.FormSetMatchResult{}
 	Token := c.GetHeader("token")
 	TournamentID := c.Param("tournamentID")
-	if err := c.ShouldBindJSON(&form); err != nil {
-		mc.log.Error("failed to bind JSON")
+
+	if Token == "" || TournamentID == "" {
+		mc.log.Error("anthentication error:token or tournamentID is null in handling 'results' require")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
 				"msg":   "failure",
-				"error": err.Error(),
+				"error": "token or tournamentID is null",
 			},
 		)
 		return
@@ -175,6 +190,21 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 		)
 		return
 	}
+
+	form := models.FormSetMatchResult{}
+	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed to bind JSON")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":      "failure",
+				"error":    err.Error(),
+				"username": claim.Username,
+			},
+		)
+		return
+	}
+
 	err := mc.ms.SetMatchResultS(TournamentID, form.Round, form.Table, form.Result)
 	if err != nil {
 		mc.log.Error("failed to set match result")
@@ -233,16 +263,16 @@ func (mc *MatchController) HandleSetMatchResultS(c *gin.Context) {
 
 func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
 	mc.log.Info("handing set match result of consolation")
-	form := models.FormSetMatchResult{}
 	Token := c.GetHeader("token")
 	TournamentID := c.Param("tournamentID")
-	if err := c.ShouldBindJSON(&form); err != nil {
-		mc.log.Error("failed to bind JSON")
+
+	if Token == "" || TournamentID == "" {
+		mc.log.Error("anthentication error:token or tournamentID is null in handling 'resultc' require")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
 				"msg":   "failure",
-				"error": err.Error(),
+				"error": "token or tournamentID is null",
 			},
 		)
 		return
@@ -260,6 +290,20 @@ func (mc *MatchController) HandleSetMatchResultC(c *gin.Context) {
 			gin.H{
 				"msg":   "failure",
 				"error": tErr.Error(),
+			},
+		)
+		return
+	}
+
+	form := models.FormSetMatchResult{}
+
+	if err := c.ShouldBindJSON(&form); err != nil {
+		mc.log.Error("failed to bind JSON")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": err.Error(),
 			},
 		)
 		return
@@ -302,6 +346,19 @@ func (mc *MatchController) HandleRefreshTable(c *gin.Context) {
 	mc.log.Info("handing set match result of single")
 	Token := c.GetHeader("token")
 	TournamentID := c.Param("tournamentID")
+
+	if Token == "" || TournamentID == "" {
+		mc.log.Error("anthentication error:token or tournamentID is null in handling 'matchschedule' require")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": "token or tournamentID is null",
+			},
+		)
+		return
+	}
+
 	log := authentication.ConfigureLogger()
 	ts := authentication.NewTokenService(log)
 
@@ -319,7 +376,7 @@ func (mc *MatchController) HandleRefreshTable(c *gin.Context) {
 		return
 	}
 
-	brackets, tid, err := mc.ms.GetTour(TournamentID)
+	brackets, err := mc.ms.GetTour(TournamentID)
 	if err != nil {
 		mc.log.Error("failed to get match schedule")
 		c.JSON(
@@ -339,7 +396,7 @@ func (mc *MatchController) HandleRefreshTable(c *gin.Context) {
 		http.StatusOK,
 		gin.H{
 			"data":          res,
-			"tournament_id": tid,
+			"tournament_id": TournamentID,
 			"username":      claim.Username,
 		},
 	)
@@ -348,13 +405,26 @@ func (mc *MatchController) HandleRefreshTable(c *gin.Context) {
 func (mc *MatchController) HandleGetAlltournamentID(c *gin.Context) {
 	mc.log.Info("handing get all tournamentId")
 	Token := c.GetHeader("token")
+
+	if Token == "" {
+		mc.log.Error("anthentication error:token is null in handling 'alltournament' require")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": "token is null",
+			},
+		)
+		return
+	}
+
 	log := authentication.ConfigureLogger()
 	ts := authentication.NewTokenService(log)
 
 	claim, tErr := ts.VerifyToken(Token)
 
 	if tErr != nil {
-		mc.log.Error("Authentication error in handle set result of single match")
+		mc.log.Error("Authentication error in handling getAllTounamentID.")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -386,17 +456,31 @@ func (mc *MatchController) HandleGetAlltournamentID(c *gin.Context) {
 	)
 
 }
+
 func (mc *MatchController) HandleGetRate(c *gin.Context) {
 	mc.log.Info("handing get rate")
 	Token := c.GetHeader("token")
 	TournamentID := c.Param("tournamentID")
+
+	if Token == "" || TournamentID == "" {
+		mc.log.Error("anthentication error:token or tournamentID is null in handling 'matchschedule' require")
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"msg":   "failure",
+				"error": "token or tournamentID is null",
+			},
+		)
+		return
+	}
+
 	log := authentication.ConfigureLogger()
 	ts := authentication.NewTokenService(log)
 
 	claim, tErr := ts.VerifyToken(Token)
 
 	if tErr != nil {
-		mc.log.Error("Authentication error in handle set result of single match")
+		mc.log.Error("Authentication error in handle getRate")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -409,7 +493,7 @@ func (mc *MatchController) HandleGetRate(c *gin.Context) {
 
 	rate, err := mc.ms.GetRateOfWinning(TournamentID)
 	if err != nil {
-		mc.log.Error("failed to get tournamentId")
+		mc.log.Error("failed to get rate of winning")
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{

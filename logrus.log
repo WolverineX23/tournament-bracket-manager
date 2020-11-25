@@ -6,3 +6,61 @@
 {"controller":"match","level":"info","msg":"handling match schedule","time":"2020-10-25T10:01:14+08:00"}
 {"level":"info","msg":"Create single tournament successfully","services":"Match","time":"2020-10-25T10:01:14+08:00"}
 {"controller":"match","level":"info","msg":"handing set match result of single","time":"2020-10-25T10:01:48+08:00"}
+{"controller":"token","level":"info","msg":"handle login and generate token","time":"2020-11-25T21:54:08+08:00"}
+{"controller":"token","level":"info","msg":"handling verify token","time":"2020-11-25T21:54:26+08:00"}
+{"controller":"token","level":"info","msg":"handle login and generate token","time":"2020-11-25T22:41:01+08:00"}
+{"controller":"token","level":"info","msg":"handling verify token","time":"2020-11-25T22:41:12+08:00"}
+{"controller":"token","level":"info","msg":"handling verify token","time":"2020-11-25T22:41:34+08:00"}
+{"controller":"token","level":"info","msg":"handle refresh token","time":"2020-11-25T22:41:37+08:00"}
+{"controller":"token","level":"info","msg":"handle refresh token","time":"2020-11-25T22:41:57+08:00"}
+{"controller":"match","level":"info","msg":"handling match schedule","time":"2020-11-25T22:42:12+08:00"}
+{"level":"error","msg":"failed to parse with claims","services":"Token","time":"2020-11-25T22:42:12+08:00"}
+{"controller":"match","level":"error","msg":"Authentication error in handle get match schedule","time":"2020-11-25T22:42:12+08:00"}
+{"controller":"match","level":"info","msg":"handling match schedule","time":"2020-11-25T22:42:37+08:00"}
+{"level":"info","msg":"Create single tournament successfully","services":"Match","time":"2020-11-25T22:42:37+08:00"}
+{"controller":"match","level":"info","msg":"handing set match result of single","time":"2020-11-25T22:45:01+08:00"}
+{"level":"error","msg":"failed to parse with claims","services":"Token","time":"2020-11-25T22:45:01+08:00"}
+{"controller":"match","level":"error","msg":"Authentication error in handle set result of single match","time":"2020-11-25T22:45:01+08:00"}
+{"controller":"match","level":"info","msg":"handing set match result of single","time":"2020-11-25T22:45:14+08:00"}
+{"controller":"match","level":"info","msg":"handing get all tournamentId","time":"2020-11-25T22:45:50+08:00"}
+{"level":"error","msg":"failed to parse with claims","services":"Token","time":"2020-11-25T22:45:50+08:00"}
+{"controller":"match","level":"error","msg":"Authentication error in handling getAllTounamentID.","time":"2020-11-25T22:45:50+08:00"}
+{"controller":"match","level":"info","msg":"handing get all tournamentId","time":"2020-11-25T22:45:56+08:00"}
+{"controller":"match","level":"info","msg":"handing set match result of single","time":"2020-11-25T22:47:00+08:00"}
+{"controller":"match","level":"info","msg":"handing get rate","time":"2020-11-25T22:47:24+08:00"}
+{"controller":"match","level":"info","msg":"handing get rate","time":"2020-11-25T22:48:39+08:00"}
+{"controller":"match","level":"info","msg":"handing get rate","time":"2020-11-25T22:49:24+08:00"}
+{"controller":"match","level":"info","msg":"handing get rate","time":"2020-11-25T22:49:41+08:00"}
+{"controller":"match","level":"info","msg":"handing get rate","time":"2020-11-25T22:49:51+08:00"}
+{"controller":"match","level":"info","msg":"handing get rate","time":"2020-11-25T22:50:36+08:00"}
+{"level":"error","msg":"failed to parse with claims","services":"Token","time":"2020-11-25T22:50:36+08:00"}
+{"controller":"match","level":"error","msg":"Authentication error in handle getRate","time":"2020-11-25T22:50:36+08:00"}
+{"controller":"match","level":"info","msg":"handing get rate","time":"2020-11-25T22:50:46+08:00"}
+{"controller":"match","level":"info","msg":"handing get rate","time":"2020-11-25T22:50:54+08:00"}
+{"controller":"match","level":"info","msg":"handing get rate","time":"2020-11-25T22:51:24+08:00"}
+{"level":"error","msg":"failed to parse with claims","services":"Token","time":"2020-11-25T22:51:24+08:00"}
+{"controller":"match","level":"error","msg":"Authentication error in handle getRate","time":"2020-11-25T22:51:24+08:00"}
+{"controller":"match","level":"info","msg":"handing get rate","time":"2020-11-25T22:51:59+08:00"}
+{"level":"error","msg":"failed to parse with claims","services":"Token","time":"2020-11-25T22:51:59+08:00"}
+{"controller":"match","level":"error","msg":"Authentication error in handle getRate","time":"2020-11-25T22:51:59+08:00"}
+{"controller":"match","level":"info","msg":"handing set match result of single","time":"2020-11-25T22:52:04+08:00"}
+{"level":"error","msg":"failed to parse with claims","services":"Token","time":"2020-11-25T22:52:04+08:00"}
+{"controller":"match","level":"error","msg":"Authentication error in handle set result of single match","time":"2020-11-25T22:52:04+08:00"}
+{"controller":"token","level":"info","msg":"handle refresh token","time":"2020-11-25T22:52:08+08:00"}
+{"level":"error","msg":"failed to parse with claims","services":"Token","time":"2020-11-25T22:52:08+08:00"}
+{"controller":"token","level":"error","msg":"authentication error in handle refresh token","time":"2020-11-25T22:52:08+08:00"}
+{"controller":"token","level":"info","msg":"handle login and generate token","time":"2020-11-25T22:52:11+08:00"}
+{"controller":"token","level":"info","msg":"handling verify token","time":"2020-11-25T22:52:24+08:00"}
+{"controller":"token","level":"info","msg":"handle refresh token","time":"2020-11-25T22:52:27+08:00"}
+{"level":"error","msg":"failed to parse with claims","services":"Token","time":"2020-11-25T22:52:27+08:00"}
+{"controller":"token","level":"error","msg":"authentication error in handle refresh token","time":"2020-11-25T22:52:27+08:00"}
+{"controller":"token","level":"info","msg":"handle refresh token","time":"2020-11-25T22:52:31+08:00"}
+{"controller":"token","level":"info","msg":"handle refresh token","time":"2020-11-25T22:52:34+08:00"}
+{"controller":"token","level":"info","msg":"handle refresh token","time":"2020-11-25T22:52:39+08:00"}
+{"controller":"match","level":"info","msg":"handing set match result of single","time":"2020-11-25T22:52:49+08:00"}
+{"level":"error","msg":"failed to update ready match of single","services":"Match","time":"2020-11-25T22:52:49+08:00"}
+{"controller":"match","level":"error","msg":"failed to set match result","time":"2020-11-25T22:52:49+08:00"}
+{"controller":"match","level":"info","msg":"handing set match result of single","time":"2020-11-25T22:52:57+08:00"}
+{"controller":"match","level":"info","msg":"handing get all tournamentId","time":"2020-11-25T22:53:23+08:00"}
+{"controller":"match","level":"info","msg":"handing set match result of single","time":"2020-11-25T22:53:30+08:00"}
+{"controller":"match","level":"info","msg":"handing get rate","time":"2020-11-25T22:53:36+08:00"}

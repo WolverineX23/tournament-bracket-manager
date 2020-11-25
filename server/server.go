@@ -6,9 +6,10 @@ package server
 
 import (
 	"fmt"
-	"github.com/bitspawngg/tournament-bracket-manager/socketFunc"
 	"log"
 	"os"
+
+	"github.com/bitspawngg/tournament-bracket-manager/socketFunc"
 
 	"github.com/bitspawngg/tournament-bracket-manager/authentication"
 
@@ -92,19 +93,22 @@ func CreateServer() *MatchServer {
 	// defer socket_server.Close()
 
 	// health check
-	r.POST("/login", tokenController.HandleLogin)                             //1
-	r.GET("/verifytoken", tokenController.HandleVerify)                       //1
-	r.GET("/refreshtoken", tokenController.HandleRefreshToken)                //1
-	r.GET("/matchschedule/:tournamentID", matchController.HandleRefreshTable) //1
 	r.GET("/ping", matchController.HandlePing)
-	r.POST("/matchschedule", matchController.HandleGetMatchSchedule)       //1
-	r.POST("/result/:tournamentID", matchController.HandleSetMatchResultS) //
-	r.POST("/setresultc", matchController.HandleSetMatchResultC)
-	r.GET("/alltournament", matchController.HandleGetAlltournamentID) //1
-	r.GET("/getrate/:tournamentID", matchController.HandleGetRate)    //1
+
+	r.GET("/login", tokenController.HandleLogin)
+	r.GET("/verifytoken", tokenController.HandleVerify)
+	r.GET("/refreshtoken", tokenController.HandleRefreshToken) //token
+
+	r.POST("/matchschedule", matchController.HandleGetMatchSchedule)
+	r.POST("/result/:tournamentID", matchController.HandleSetMatchResultS)
+	r.POST("/setresultc", matchController.HandleSetMatchResultC) //database update
+
+	r.GET("/alltournament", matchController.HandleGetAlltournamentID)
+	r.GET("/matchschedule/:tournamentID", matchController.HandleRefreshTable)
+	r.GET("/getrate/:tournamentID", matchController.HandleGetRate) //get data from database to web
 
 	r.GET("/socket.io/", gin.WrapH(socketServer))
-	r.POST("/socket.io/", gin.WrapH(socketServer))
+	r.POST("/socket.io/", gin.WrapH(socketServer)) //socket.io
 	/*
 	 Start HTTP Server
 	*/
@@ -120,7 +124,7 @@ func CreateServer() *MatchServer {
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:8081")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://3.131.128.209:8081")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, X-Auth-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")

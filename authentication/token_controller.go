@@ -69,6 +69,7 @@ func (tc *TokenController) HandleLogin(c *gin.Context) {
 func (tc *TokenController) HandleVerify(c *gin.Context) {
 	tc.log.Info("handling verify token")
 	Token := c.GetHeader("token")
+
 	if Token == "" {
 		tc.log.Error("missing mandatory input parameter in function HandleVerify")
 		c.JSON(
