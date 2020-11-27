@@ -95,7 +95,7 @@ func CreateServer() *MatchServer {
 	// health check
 	r.GET("/ping", matchController.HandlePing)
 
-	r.GET("/login", tokenController.HandleLogin)
+	r.POST("/login", tokenController.HandleLogin)
 	r.GET("/verifytoken", tokenController.HandleVerify)
 	r.GET("/refreshtoken", tokenController.HandleRefreshToken) //token
 
