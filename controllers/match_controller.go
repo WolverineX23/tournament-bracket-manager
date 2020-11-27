@@ -504,7 +504,7 @@ func (mc *MatchController) HandleGetRate(c *gin.Context) {
 		return
 	}
 	c.JSON(
-		http.StatusBadRequest,
+		http.StatusOK,
 		gin.H{
 			"data":     rate,
 			"username": claim.Username,
