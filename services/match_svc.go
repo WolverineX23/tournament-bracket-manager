@@ -245,6 +245,12 @@ func (ms *MatchService) GetChampion(tournamentId string) (string, error) {
 		return "", err
 	}
 	thisMatch, err := ms.db.GetMatch(tournamentId, int(math.Log2(float64(len(matches)))+1), 1)
+	if err != nil {
+		return "", err
+	}
+	if thisMatch == nil {
+		return "", nil
+	}
 	if thisMatch.Result == 0 {
 		return "", nil
 	}
@@ -296,9 +302,11 @@ func (ms *MatchService) GetRateOfWinning(tournamentId string) ([]float64, error)
 	var cntOfWinning int
 	cntOfWinning = 0
 	for j := 0; j < len(Teams); j++ {
+		// 获取每个队的胜率
 		cntOfWinning = 0
 		for i := 0; i < len(tournamentIds); i++ {
-			winner, err := ms.GetChampion(tournamentIds[i])
+			// 遍历每场比赛
+			winner, err := ms.GetChampion(tournamentIds[i]) // 获取该比赛的胜利队伍
 			if err != nil {
 				return nil, err
 			}
